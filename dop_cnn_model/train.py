@@ -16,7 +16,7 @@ torch.manual_seed(1)
 
 # with GPU
 if torch.cuda.device_count() > 1:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1' # 这里输入你的GPU_id
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 os.makedirs("output", exist_ok=True)
