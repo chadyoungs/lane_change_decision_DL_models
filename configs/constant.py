@@ -1,1 +1,1 @@
-DATASET_ROOT = "/shared/toolchain/deeplearning/dataset/highd-dataset-v1.0"
+DATASET_ROOT = "*/highd-dataset-v1.0"
