@@ -1,10 +1,13 @@
 import os
+import sys
+PRE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 import pickle
 
 import torch.utils.data as data
 
 class DataSet(data.Dataset):
-    def __init__(self, option, root="../calculate/output"):
+    def __init__(self, option, root=f"{PRE_DIR}/output"):
         # testing, training
         self.option = option
         self.data_file = os.path.join(root, f"result_{self.option}_CNN_FC.pickle")

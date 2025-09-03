@@ -244,6 +244,7 @@ def cnn_fc_main():
         feature_construction.construct()
         result, change_num, keep_num = feature_construction.result, feature_construction.lane_change_count, feature_construction.lane_keep_count
         
+        print(f"{i}th file has been processed")
         total_change += change_num
         print("total changes:", total_change)
         total_keep += keep_num

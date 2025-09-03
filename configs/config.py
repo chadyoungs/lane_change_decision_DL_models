@@ -1,5 +1,5 @@
 # frame rate 25
-FEATURE_CHOICE = "Normal"
+FEATURE_CHOICE = "CNN_FC"
 LANE_CHANGE_KEEP_RATIO = 1
 FRAME_TAKEN = 50  # number of states to construct features, 50 means 2 seconds
 FRAME_BEFORE = 25  # frame taken before the lane change, 25 means 1 second

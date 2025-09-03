@@ -1,1 +1,1 @@
-DATASET_ROOT = "*/highd-dataset-v1.0"
+DATASET_ROOT = "/ext-data/datasets/highd-dataset-v1.0"

@@ -85,7 +85,7 @@ def read_tracks_csv(track_csv_path):
                                                 rows[Y].values,
                                                 rows[WIDTH].values,
                                                 rows[HEIGHT].values]))
-        tracks[np.int64(group_id)] = {
+        tracks[int(group_id[0])] = {
             FRAME: rows[FRAME].values,
             X: rows[X].values,
             Y: rows[Y].values,

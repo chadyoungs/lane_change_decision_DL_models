@@ -1,4 +1,7 @@
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PRE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 import numpy as np
 
@@ -20,7 +23,7 @@ if torch.cuda.device_count() > 1:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 os.makedirs("output", exist_ok=True)
-net_path = "output/best_accuracy_net.pth"
+net_path = f"{PRE_DIR}/output/best_accuracy_net.pth"
 
 # set hyper-parameters
 batch_size = 16

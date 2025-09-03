@@ -10,12 +10,16 @@ import time
 
 torch.manual_seed(1)
 
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PRE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # load data into pytorch tensor
 input_data = []
 for i in range(1, 61):
     idx_str = '{0:02}'.format(i)
-    pickle_in = open("../calculate/output/result"+idx_str+"_Normal.pickle", "rb")
+    pickle_in = open(f"{PRE_DIR}/output/result"+idx_str+"_Normal.pickle", "rb")
     temp_data = pickle.load(pickle_in)
     print("Loaded "+idx_str+" data pack")
     input_data.extend(temp_data)
