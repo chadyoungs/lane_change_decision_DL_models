@@ -27,7 +27,7 @@ Usage
 -----
 1. Please put the HighD dataset to ``*/highd-dataset-v1.0/data/`` corresponding to the value of ``DATASET_ROOT`` in ``./configs/constant.py``.
 
-2. Modify the ``configs/config.py``, The variable of ``FEATURE_CHOICE`` should be modified to ``CNN_FC``, ``NORMAL`` for dop model and rnn model, respectively. Other Feature construction variables in '' also should be modified depends on the user's requirements.
+2. Modify the ``configs/config.py``, The variable of ``FEATURE_CHOICE`` should be modified to ``CNN_FC``, ``NORMAL`` for dop model and rnn model, respectively. Other Feature construction variables in ``configs/config.py`` also should be modified depends on the user's requirements.
 
 3. Run ``python3 ./calculate/get_event_feature.py`` and ``python3 ./calculate/get_time_series_feature.py`` to process the dataset and the output data for dop model and rnn model will be stored into the folder of ``./output`` in pickle format, respectively.
 
