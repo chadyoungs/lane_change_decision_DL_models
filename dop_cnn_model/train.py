@@ -21,6 +21,8 @@ torch.manual_seed(1)
 if torch.cuda.device_count() > 1:
     os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+elif torch.cuda.device_count() == 1:
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 os.makedirs("output", exist_ok=True)
 net_path = f"{PRE_DIR}/output/best_accuracy_net.pth"
@@ -33,6 +35,8 @@ num_epoch = 100
 model = CN_FC()
 if torch.cuda.device_count() > 1:
     model = nn.DataParallel(model.to(device))
+elif torch.cuda.device_count() == 1:
+    model = model.to(device)
 
 loss_function = nn.CrossEntropyLoss()
 
@@ -54,7 +58,7 @@ for epoch in range(1, num_epoch+1):
         optimizer.zero_grad()
 
         # Step 2. Run our forward pass.
-        if torch.cuda.device_count() > 1:
+        if torch.cuda.device_count() >= 1:
             ego_dop_data = ego_dop_data.float().to(device)
             sur_dop_data = sur_dop_data.float().to(device)
             ego_vector_data = ego_vector_data.float().to(device)
@@ -62,7 +66,7 @@ for epoch in range(1, num_epoch+1):
         
         # Step 3. Compute the loss, gradients, and update the parameters by
         #  calling optimizer.step()
-        if torch.cuda.device_count() > 1:
+        if torch.cuda.device_count() >= 1:
             labels = labels.to(device)
         loss = loss_function(tag_scores, labels)
         total_loss += loss.item()
@@ -81,7 +85,7 @@ for epoch in range(1, num_epoch+1):
     
     with torch.no_grad():
         for batch_idx, (ego_dop_data, sur_dop_data, ego_vector_data, labels) in enumerate(test_loader):
-            if torch.cuda.device_count() > 1:
+            if torch.cuda.device_count() >= 1:
                 ego_dop_data = ego_dop_data.float().to(device)
                 sur_dop_data = sur_dop_data.float().to(device)
                 ego_vector_data = ego_vector_data.float().to(device)

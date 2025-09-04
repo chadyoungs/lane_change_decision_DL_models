@@ -20,7 +20,7 @@ class CN_FC(nn.Module):
             nn.Linear(50, 128),
             nn.Linear(128, 32),
             nn.Linear(32, 16),
-            
+            nn.Linear(16, 3),
         )
     
     def forward(self, ego_dop_input, sur_dop_input, ego_vector_input):
@@ -28,7 +28,8 @@ class CN_FC(nn.Module):
         CN_surround_output = self.conv_surround(sur_dop_input)
         
         CN_output = torch.cat([CN_ego_output, CN_surround_output, ego_vector_input], dim=1)
+        
         output = self.fc(CN_output)
-
+    
         return output
 

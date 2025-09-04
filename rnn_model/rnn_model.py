@@ -94,7 +94,7 @@ optimizer = optim.SGD(model.parameters(), lr=0.1)
 # load the data into pytorch
 def prepare_sequence(state_sequence, tag):
     s_seq_tensor = torch.tensor(state_sequence, dtype=torch.float)
-    #print(s_seq_tensor, s_seq_tensor.size())
+    print(s_seq_tensor, s_seq_tensor.size())
     tag_list = [tag] * len(state_sequence)
     labels = torch.tensor(tag_list, dtype=torch.long)
     # print(labels.size())
