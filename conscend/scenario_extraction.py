@@ -532,8 +532,7 @@ class ConScenDExtractor:
         scenario_object = SubElement(entities, "ScenarioObject", {"name": name})
         vehicle = SubElement(scenario_object, "Vehicle", {"name": name, "vehicleCategory": "car"})
         SubElement(vehicle, "BoundingBox")
-        performance = SubElement(vehicle, "Performance", {"maxSpeed": "70", "maxAcceleration": "8", "maxDeceleration": "9"})
-        vehicle.addprevious = performance
+        SubElement(vehicle, "Performance", {"maxSpeed": "70", "maxAcceleration": "8", "maxDeceleration": "9"})
 
     def _add_init_private_action(self, actions: Element, entity_ref: str, lane_id: int, x_position: float, speed: float) -> None:
         private = SubElement(actions, "Private", {"entityRef": entity_ref})
