@@ -33,6 +33,33 @@ Usage
 
 4. Run ``python3 dop_cnn_model/train.py`` and ``python3 rnn_model/rnn_model.py`` to train and test for dop model and rnn model, respectively.
 
+5. Run ``python3 extract_conscend.py`` to generate a ConScenD-style scenario dataset from highD. The script exports:
+   - scenario metadata JSON files in ``./output/conscend/metadata/``
+   - OpenSCENARIO ``.xosc`` files in ``./output/conscend/scenarios/``
+   - straight-road OpenDRIVE ``.xodr`` files in ``./output/conscend/roads/``
+
+6. Optional arguments for the ConScenD workflow:
+   - ``python3 extract_conscend.py --recordings 1 2 3`` to process selected recordings only
+   - ``python3 extract_conscend.py --dataset-root /path/to/highd-dataset-v1.0``
+   - ``python3 extract_conscend.py --output-root /path/to/output/conscend``
+
+ConScenD reproduction notes
+-----
+
+The new extraction pipeline follows the paper title and available methodological details for
+**The ConScenD Dataset: Concrete Scenarios from the highD Dataset According to ALKS Regulation UNECE R157 in OpenX**.
+It adds a ConScenD-style scenario export workflow on top of the existing highD readers in this repository.
+
+Implemented scenario logic:
+- ALKS speed-domain filtering at ``60 km/h`` equivalent
+- lane-change detection from ``laneId`` transitions
+- cut-in classification using adjacent following / alongside vehicles before the maneuver
+- non-lane-change classification for free-driving and car-following scenarios
+- OpenSCENARIO and OpenDRIVE export for each extracted scenario
+
+This implementation is intended to be reproducible with the public highD dataset and repository code,
+while remaining explicit that some paper details were inferred from the regulation and related OpenX references.
+
 Python version
 --------------
 python_version == 3.12.3
@@ -41,5 +68,4 @@ Requirements
 ------------
 Packages installation guide: ``pip3 install -r requirement.txt``
 Anaconda was recommended here.
-
 
