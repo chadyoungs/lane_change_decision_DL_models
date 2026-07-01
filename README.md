@@ -1,6 +1,6 @@
 <div align="center">   
 
-# Common Lane Change Decision Making DL models for highD dataset
+# Common Lane Change Decision Making DL/RL models for highD dataset
 </div>
 
 Overview
@@ -21,7 +21,14 @@ Details
 > **Lane-Change-Prediction-LSTM**
 > - referenced and modified from [nqyy](https://github.com/nqyy)'s repo.
 > - [Github repo](https://github.com/nqyy/lane-change-prediction-lstm)
-> - corresponding to rnn model in this repo. 
+> - corresponding to rnn model in this repo.
+
+> **Reinforcement Learning methods (DQN / Double DQN / Dueling DQN / PPO)**
+> - located in ``rl_models/``.
+> - use the same 16-dimensional Feature-A state vector as the RNN model.
+> - a data-driven ``LaneChangeEnv`` wraps the pre-processed highD Normal-feature
+>   pickles so that any standard RL algorithm can be trained without an external
+>   simulator.
 
 Usage
 -----
@@ -33,12 +40,36 @@ Usage
 
 4. Run ``python3 dop_cnn_model/train.py`` and ``python3 rnn_model/rnn_model.py`` to train and test for dop model and rnn model, respectively.
 
-5. Run ``python3 extract_conscend.py`` to generate a ConScenD-style scenario dataset from highD. The script exports:
+5. **RL methods** — set ``FEATURE_CHOICE = "Normal"`` in ``configs/config.py`` and run
+   ``python3 calculate/get_time_series_feature.py`` first to generate the Normal-feature
+   pickles.  Then launch any of the four RL agents:
+
+   ```bash
+   python3 rl_models/dqn/train.py          # DQN
+   python3 rl_models/double_dqn/train.py   # Double DQN
+   python3 rl_models/dueling_dqn/train.py  # Dueling DQN (+ Double DQN update)
+   python3 rl_models/ppo/train.py          # PPO with GAE
+   ```
+
+   Best-checkpoint weights are saved to ``output/dqn_best.pth``,
+   ``output/double_dqn_best.pth``, ``output/dueling_dqn_best.pth``, and
+   ``output/ppo_best.pth`` respectively.
+
+   **RL models overview:**
+
+   | Model | Key idea |
+   |---|---|
+   | DQN | Q-learning with experience replay and a target network |
+   | Double DQN | Decouples action selection (online net) from action evaluation (target net) to reduce overestimation bias |
+   | Dueling DQN | Splits Q into value stream V(s) and advantage stream A(s,a) for better generalisation across actions |
+   | PPO | On-policy policy-gradient with clipped surrogate objective and GAE advantage estimation |
+
+6. Run ``python3 extract_conscend.py`` to generate a ConScenD-style scenario dataset from highD. The script exports:
    - scenario metadata JSON files in ``./output/conscend/metadata/``
    - OpenSCENARIO ``.xosc`` files in ``./output/conscend/scenarios/``
    - straight-road OpenDRIVE ``.xodr`` files in ``./output/conscend/roads/``
 
-6. Optional arguments for the ConScenD workflow:
+7. Optional arguments for the ConScenD workflow:
    - ``python3 extract_conscend.py --recordings 1 2 3`` to process selected recordings only
    - ``python3 extract_conscend.py --dataset-root /path/to/highd-dataset-v1.0``
    - ``python3 extract_conscend.py --output-root /path/to/output/conscend``
