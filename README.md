@@ -13,6 +13,10 @@ Details
 -----
 > 
 
+> **Prediction Based Decision Making for Autonomous Highway Driving**
+> - [Paper in arXiv](https://arxiv.org/abs/2209.02106)
+> - corresponding to Averaged DQN TTLC model in this repo.
+
 > **A Learning-Based Discretionary Lane-Change Decision-Making Model with Driving Style Awareness**
 > - [Paper in arXiv](https://arxiv.org/abs/2010.09533)
 > - corresponding to dop(driving operational picture) model in this repo.
