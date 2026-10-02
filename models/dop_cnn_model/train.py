@@ -11,10 +11,10 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from dataset import DataSet
+from models.dop_cnn_model.dataset import DataSet
 import time
 
-from model import CN_FC
+from models.dop_cnn_model.model import CN_FC
 torch.manual_seed(1)
 
 # with GPU

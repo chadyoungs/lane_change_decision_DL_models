@@ -27,8 +27,8 @@ import torch.optim as optim
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 PRE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rl_models.env import LaneChangeEnv
-from rl_models.ppo.model import PolicyNet, ValueNet
+from models.rl_models.env import LaneChangeEnv
+from models.rl_models.ppo.model import PolicyNet, ValueNet
 
 torch.manual_seed(1)
 random.seed(1)

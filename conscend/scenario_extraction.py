@@ -2,17 +2,16 @@ import json
 import math
 import os
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from typing import Dict, Iterable, List, Optional, Tuple
-from xml.dom import minidom
-from xml.etree.ElementTree import Element, SubElement, tostring
 
 import numpy as np
+from pathlib import Path
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(Path(__file__).parent.parent.absolute().as_posix())
 
-from configs.constant import DATASET_ROOT
-from read.read_data import (
+from configs.config import DATASET_ROOT
+from features.raw_data_reading import (
     FRAME,
     LANE_ID,
     LEFT_ALONGSIDE_ID,
@@ -33,48 +32,41 @@ from read.read_data import (
     read_tracks_meta,
 )
 
+from conscend.conscend_config import FRAME_RATE, MAX_ALKS_SPEED_MPS, FOLLOWING_DISTANCE_TIME_GAP_S, LANE_CHANGE_LOOKBACK_FRAMES, LANE_CHANGE_LOOKAHEAD_FRAMES, ADJACENT_LOOKBACK_FRAMES, CAR_FOLLOWING_RATIO, FREE_DRIVING_RATIO, FREE_DRIVING_THW_S, EMERGENCY_BRAKE_ACCELERATION_MPS2
 
-FRAME_RATE = 25
-MAX_ALKS_SPEED_MPS = 60 / 3.6
-FOLLOWING_DISTANCE_TIME_GAP_S = 1.6
-LANE_CHANGE_LOOKBACK_FRAMES = 18
-LANE_CHANGE_LOOKAHEAD_FRAMES = 25
-ADJACENT_LOOKBACK_FRAMES = 10
-CAR_FOLLOWING_RATIO = 0.6
-FREE_DRIVING_RATIO = 0.7
-FREE_DRIVING_THW_S = 3.0
-EMERGENCY_BRAKE_ACCELERATION_MPS2 = -2.0
+from conscend.utils.scenario import ScenarioRecord
+from conscend.utils.osc_builder import OpenScenarioBuilder
+from conscend.utils.odr_builder import OpenDriveBuilder
 
+import logging
 
-@dataclass
-class ScenarioRecord:
-    scenario_id: str
-    recording_id: str
-    ego_vehicle_id: int
-    scenario_type: str
-    start_frame: int
-    end_frame: int
-    event_frame: int
-    direction: str
-    lane_id: int
-    target_lane_id: int
-    openx_lane_id: int
-    openx_target_lane_id: int
-    ego_speed_mps: float
-    ego_x_m: float
-    ego_y_m: float
-    thw_s: float
-    required_following_distance_m: float
-    peak_lateral_velocity_mps: float
-    longitudinal_acceleration_mps2: float
-    adjacent_vehicle_id: int
-    preceding_vehicle_id: int
-    lane_change_duration_s: float
-    lane_width_m: float
-    road_file: str
-    actors: List[Dict[str, float]]
-    trajectory: List[Dict[str, float]]
+def setup_logger():
+    logger = logging.getLogger("scenario_extraction")
+    logger.setLevel(logging.DEBUG)
+    # 避免重复增加handler
+    if logger.handlers:
+        return logger
 
+    formatter = logging.Formatter(
+        "%(asctime)s | %(name)-12s | %(levelname)-8s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    # 控制台输出
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    ch.setFormatter(formatter)
+
+    # 文件输出，全部DEBUG写入文件
+    fh = logging.FileHandler(LOG_D年  IR / "simulation.log", encoding="utf‑8")
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+
+    logger.addHandler(ch)
+    logger.addHandler(fh)
+    return logger
+
+logger = setup_logger()
 
 class ConScenDExtractor:
     def __init__(self, dataset_root: str = DATASET_ROOT, output_root: Optional[str] = None):
@@ -120,7 +112,7 @@ class ConScenDExtractor:
         os.makedirs(metadata_dir, exist_ok=True)
 
         road_file = os.path.join(road_dir, f"{recording_id}_straight_highway.xodr")
-        self._write_opendrive_file(road_file, lane_width, recording_meta, lane_id_map)
+        OpenDriveBuilder()._write_opendrive_file(road_file, lane_width, recording_meta, lane_id_map)
 
         scenarios: List[ScenarioRecord] = []
         scenario_counter = 0
@@ -380,49 +372,6 @@ class ConScenDExtractor:
 
         return lane_id_map, lane_width
 
-    def _write_opendrive_file(self, output_path: str, lane_width: float, recording_meta: Dict[str, np.ndarray], lane_id_map: Dict[int, int]) -> None:
-        road = Element("OpenDRIVE")
-        SubElement(
-            road,
-            "header",
-            {
-                "revMajor": "1",
-                "revMinor": "4",
-                "name": os.path.basename(output_path),
-                "version": "1.00",
-                "date": "2026-06-30",
-                "north": "0",
-                "south": "0",
-                "east": "0",
-                "west": "0",
-            },
-        )
-        road_element = SubElement(road, "road", {"name": "straight_highway", "length": "500.0", "id": "1", "junction": "-1"})
-        plan_view = SubElement(road_element, "planView")
-        geometry = SubElement(plan_view, "geometry", {"s": "0", "x": "0", "y": "0", "hdg": "0", "length": "500.0"})
-        SubElement(geometry, "line")
-
-        lanes = SubElement(road_element, "lanes")
-        lane_section = SubElement(lanes, "laneSection", {"s": "0"})
-        left = SubElement(lane_section, "left")
-        center = SubElement(lane_section, "center")
-        right = SubElement(lane_section, "right")
-        SubElement(center, "lane", {"id": "0", "type": "none", "level": "false"})
-
-        positive_lane_ids = sorted([lane_id for lane_id in lane_id_map.values() if lane_id > 0])
-        negative_lane_ids = sorted([lane_id for lane_id in lane_id_map.values() if lane_id < 0], reverse=True)
-
-        for lane_id in positive_lane_ids:
-            lane = SubElement(left, "lane", {"id": str(lane_id), "type": "driving", "level": "false"})
-            SubElement(lane, "width", {"sOffset": "0", "a": f"{lane_width:.3f}", "b": "0", "c": "0", "d": "0"})
-
-        for lane_id in negative_lane_ids:
-            lane = SubElement(right, "lane", {"id": str(lane_id), "type": "driving", "level": "false"})
-            SubElement(lane, "width", {"sOffset": "0", "a": f"{lane_width:.3f}", "b": "0", "c": "0", "d": "0"})
-
-        with open(output_path, "w", encoding="utf-8") as file_object:
-            file_object.write(self._pretty_xml(road))
-
     def _persist_scenario(self, scenario: ScenarioRecord, scenario_dir: str, metadata_dir: str) -> None:
         metadata_path = os.path.join(metadata_dir, f"{scenario.scenario_id}.json")
         scenario_path = os.path.join(scenario_dir, f"{scenario.scenario_id}.xosc")
@@ -431,132 +380,7 @@ class ConScenDExtractor:
             json.dump(asdict(scenario), file_object, indent=2)
 
         with open(scenario_path, "w", encoding="utf-8") as file_object:
-            file_object.write(self._build_openscenario_xml(scenario))
-
-    def _build_openscenario_xml(self, scenario: ScenarioRecord) -> str:
-        root = Element("OpenSCENARIO")
-        SubElement(
-            root,
-            "FileHeader",
-            {
-                "revMajor": "1",
-                "revMinor": "0",
-                "date": "2026-06-30T00:00:00",
-                "description": f"ConScenD-style {scenario.scenario_type} scenario from highD recording {scenario.recording_id}",
-                "author": "GitHub Copilot Task Agent",
-            },
-        )
-
-        parameter_declarations = SubElement(root, "ParameterDeclarations")
-        self._add_parameter(parameter_declarations, "egoSpeedInit", "double", f"{scenario.ego_speed_mps:.3f}")
-        self._add_parameter(parameter_declarations, "egoStartX", "double", f"{scenario.ego_x_m:.3f}")
-        self._add_parameter(parameter_declarations, "egoLaneId", "integer", str(scenario.openx_lane_id))
-        self._add_parameter(parameter_declarations, "targetLaneId", "integer", str(scenario.openx_target_lane_id))
-        self._add_parameter(parameter_declarations, "requiredFollowingDistance", "double", f"{scenario.required_following_distance_m:.3f}")
-        self._add_parameter(parameter_declarations, "peakLateralVelocity", "double", f"{scenario.peak_lateral_velocity_mps:.3f}")
-
-        catalog_locations = SubElement(root, "CatalogLocations")
-        SubElement(catalog_locations, "VehicleCatalog", {"directory": "../catalogs/vehicles"})
-        SubElement(catalog_locations, "ControllerCatalog", {"directory": "../catalogs/controllers"})
-
-        road_network = SubElement(root, "RoadNetwork")
-        SubElement(road_network, "LogicFile", {"filepath": f"../../roads/{os.path.basename(scenario.road_file)}"})
-
-        entities = SubElement(root, "Entities")
-        self._add_vehicle_entity(entities, "EgoVehicle")
-        if scenario.preceding_vehicle_id != 0:
-            self._add_vehicle_entity(entities, "TargetVehicle")
-
-        storyboard = SubElement(root, "Storyboard")
-        init = SubElement(storyboard, "Init")
-        actions = SubElement(init, "Actions")
-        self._add_init_private_action(actions, "EgoVehicle", scenario.openx_lane_id, scenario.ego_x_m, scenario.ego_speed_mps)
-        if scenario.preceding_vehicle_id != 0:
-            target_speed = max(scenario.ego_speed_mps - 2.0, 0.0)
-            target_x = scenario.ego_x_m + max(10.0, scenario.required_following_distance_m)
-            self._add_init_private_action(actions, "TargetVehicle", scenario.openx_target_lane_id, target_x, target_speed)
-
-        story = SubElement(storyboard, "Story", {"name": "ConScenDStory"})
-        act = SubElement(story, "Act", {"name": "MainAct"})
-        act_start_trigger = SubElement(act, "StartTrigger")
-        act_condition_group = SubElement(act_start_trigger, "ConditionGroup")
-        act_condition = SubElement(act_condition_group, "Condition", {"name": "ActStart", "delay": "0", "conditionEdge": "rising"})
-        act_by_value = SubElement(act_condition, "ByValueCondition")
-        SubElement(act_by_value, "SimulationTimeCondition", {"value": "0.0", "rule": "greaterThan"})
-        maneuver_group = SubElement(act, "ManeuverGroup", {"name": "MainManeuverGroup", "maximumExecutionCount": "1"})
-        actors = SubElement(maneuver_group, "Actors", {"selectTriggeringEntities": "false"})
-        SubElement(actors, "EntityRef", {"entityRef": "EgoVehicle"})
-        maneuver = SubElement(maneuver_group, "Maneuver", {"name": "MainManeuver"})
-        event = SubElement(maneuver, "Event", {"name": "PrimaryEvent", "priority": "overwrite"})
-        action = SubElement(event, "Action", {"name": "PrimaryAction"})
-
-        if scenario.scenario_type in {"cut_in", "simple_lane_change"}:
-            private_action = SubElement(action, "PrivateAction")
-            lateral_action = SubElement(private_action, "LateralAction")
-            lane_change_action = SubElement(lateral_action, "LaneChangeAction")
-            SubElement(
-                lane_change_action,
-                "LaneChangeActionDynamics",
-                {"dynamicsShape": "sinusoidal", "value": f"{max(scenario.lane_change_duration_s, 1.0):.3f}", "dynamicsDimension": "time"},
-            )
-            lane_change_target = SubElement(lane_change_action, "LaneChangeTarget")
-            SubElement(lane_change_target, "AbsoluteTargetLane", {"value": str(scenario.openx_target_lane_id)})
-        else:
-            private_action = SubElement(action, "PrivateAction")
-            longitudinal_action = SubElement(private_action, "LongitudinalAction")
-            speed_action = SubElement(longitudinal_action, "SpeedAction")
-            SubElement(speed_action, "SpeedActionDynamics", {"dynamicsShape": "linear", "value": "2.0", "dynamicsDimension": "time"})
-            speed_target = SubElement(speed_action, "SpeedActionTarget")
-            target_speed = (
-                scenario.ego_speed_mps
-                if scenario.scenario_type in {"free_driving", "car_following_comfortable"}
-                else max(scenario.ego_speed_mps - 5.0, 0.0)
-            )
-            SubElement(speed_target, "AbsoluteTargetSpeed", {"value": f"{target_speed:.3f}"})
-
-        start_trigger = SubElement(event, "StartTrigger")
-        condition_group = SubElement(start_trigger, "ConditionGroup")
-        condition = SubElement(condition_group, "Condition", {"name": "SimulationStart", "delay": "0", "conditionEdge": "rising"})
-        by_value = SubElement(condition, "ByValueCondition")
-        SubElement(by_value, "SimulationTimeCondition", {"value": "0.0", "rule": "greaterThan"})
-
-        stop_trigger = SubElement(storyboard, "StopTrigger")
-        condition_group = SubElement(stop_trigger, "ConditionGroup")
-        condition = SubElement(condition_group, "Condition", {"name": "StopAfterTenSeconds", "delay": "0", "conditionEdge": "rising"})
-        by_value = SubElement(condition, "ByValueCondition")
-        SubElement(by_value, "SimulationTimeCondition", {"value": "10.0", "rule": "greaterThan"})
-
-        return self._pretty_xml(root)
-
-    def _add_vehicle_entity(self, entities: Element, name: str) -> None:
-        scenario_object = SubElement(entities, "ScenarioObject", {"name": name})
-        vehicle = SubElement(scenario_object, "Vehicle", {"name": name, "vehicleCategory": "car"})
-        SubElement(vehicle, "BoundingBox")
-        SubElement(vehicle, "Performance", {"maxSpeed": "70", "maxAcceleration": "8", "maxDeceleration": "9"})
-
-    def _add_init_private_action(self, actions: Element, entity_ref: str, lane_id: int, x_position: float, speed: float) -> None:
-        private = SubElement(actions, "Private", {"entityRef": entity_ref})
-        private_action = SubElement(private, "PrivateAction")
-        teleport_action = SubElement(private_action, "TeleportAction")
-        position = SubElement(teleport_action, "Position")
-        SubElement(position, "LanePosition", {"roadId": "1", "laneId": str(lane_id), "offset": "0", "s": f"{max(x_position, 0.0):.3f}"})
-        private_action = SubElement(private, "PrivateAction")
-        longitudinal_action = SubElement(private_action, "LongitudinalAction")
-        speed_action = SubElement(longitudinal_action, "SpeedAction")
-        SubElement(speed_action, "SpeedActionDynamics", {"dynamicsShape": "step", "value": "0", "dynamicsDimension": "time"})
-        target = SubElement(speed_action, "SpeedActionTarget")
-        SubElement(target, "AbsoluteTargetSpeed", {"value": f"{max(speed, 0.0):.3f}"})
-
-    def _add_parameter(self, parameter_declarations: Element, name: str, parameter_type: str, value: str) -> None:
-        SubElement(
-            parameter_declarations,
-            "ParameterDeclaration",
-            {"name": name, "parameterType": parameter_type, "value": value},
-        )
-
-    def _pretty_xml(self, element: Element) -> str:
-        rough_string = tostring(element, encoding="utf-8")
-        return minidom.parseString(rough_string).toprettyxml(indent="  ")
+            file_object.write(OpenScenarioBuilder()._build_openscenario_xml(scenario))
 
     def _write_summary(self, scenarios: List[ScenarioRecord]) -> None:
         summary_path = os.path.join(self.output_root, "conscend_summary.json")

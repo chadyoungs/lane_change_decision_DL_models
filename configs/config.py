@@ -1,3 +1,6 @@
+# dataset
+DATASET_ROOT = "/mnt/sdb/datasets/highd-dataset-v1.0"
+
 # frame rate 25
 FEATURE_CHOICE = "CNN_FC"
 LANE_CHANGE_KEEP_RATIO = 1

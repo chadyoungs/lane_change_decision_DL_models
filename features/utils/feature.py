@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from collections import OrderedDict
 from configs.config import *
 from configs.constant import *
-from read.read_data import *
+from features.raw_data_reading import *
 from lane import LaneInfo
 
 

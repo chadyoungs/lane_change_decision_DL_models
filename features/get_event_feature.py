@@ -7,9 +7,9 @@ from configs.config import *
 from configs.constant import *
 import random
 import pickle
-from read.read_data import *
-from modules.lane import LaneInfo
-from modules.feature import Feature
+from features.raw_data_reading import *
+from utils.lane import LaneInfo
+from utils.feature import Feature
 
 import numpy as np
 

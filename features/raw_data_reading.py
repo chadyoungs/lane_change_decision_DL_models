@@ -1,4 +1,9 @@
 # Note: Referenced and modified from https://github.com/RobertKrajewski/highD-dataset
+"""
+This module contains functions to read the raw data from the highD dataset which
+contains 3 csv files: tracks.csv, tracksMeta.csv and recordingMeta.csv. 
+The functions read the csv files and return the data in a dictionary format.
+"""
 
 import pandas
 import numpy as np

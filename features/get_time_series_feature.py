@@ -7,9 +7,9 @@ from configs.constant import *
 
 import random
 import pickle
-from read.read_data import *
-from modules.feature import Feature
-from modules.lane import LaneInfo
+from features.raw_data_reading import *
+from utils.feature import Feature
+from utils.lane import LaneInfo
 
 
 class FeatureConstruction(object):

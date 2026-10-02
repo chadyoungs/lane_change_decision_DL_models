@@ -1,0 +1,10 @@
+{
+  "total_scenarios": 0,
+  "scenario_counts": {},
+  "constraints": {
+    "max_alks_speed_mps": 16.666666666666668,
+    "following_distance_time_gap_s": 1.6,
+    "lane_change_lookback_frames": 18,
+    "lane_change_lookahead_frames": 25
+  }
+}

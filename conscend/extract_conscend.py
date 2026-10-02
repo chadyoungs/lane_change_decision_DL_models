@@ -2,10 +2,12 @@ import argparse
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from pathlib import Path
+sys.path.append(Path(__file__).parent.parent.absolute().as_posix())
 
 from conscend.scenario_extraction import ConScenDExtractor
-from configs.constant import DATASET_ROOT
+
+from configs.config import DATASET_ROOT
 
 
 def parse_args():

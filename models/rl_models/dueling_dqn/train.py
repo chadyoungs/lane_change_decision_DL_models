@@ -1,17 +1,13 @@
 """
-Double DQN for lane-change decision making.
+Dueling DQN for lane-change decision making.
 
-References
-----------
-van Hasselt et al., "Deep Reinforcement Learning with Double Q-learning", AAAI 2016.
-
-The key difference from plain DQN: the online network selects the best next action,
-while the target network evaluates it.  This decouples action selection from action
-evaluation and reduces overestimation bias.
+Combines the Dueling network architecture (Wang et al., ICML 2016) with the
+Double DQN update rule (van Hasselt et al., AAAI 2016) for best-of-both-worlds
+performance.
 
 Usage
 -----
-    python3 rl_models/double_dqn/train.py
+    python3 rl_models/dueling_dqn/train.py
 """
 
 import os
@@ -27,16 +23,16 @@ import torch.optim as optim
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 PRE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rl_models.env import LaneChangeEnv
-from rl_models.replay_buffer import ReplayBuffer
-from rl_models.dqn.model import QNetwork   # reuse the same architecture
+from models.rl_models.env import LaneChangeEnv
+from models.rl_models.replay_buffer import ReplayBuffer
+from models.rl_models.dueling_dqn.model import DuelingQNetwork
 
 torch.manual_seed(1)
 random.seed(1)
 np.random.seed(1)
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Hyper-parameters  (same as DQN for a fair comparison)
+# Hyper-parameters
 # ──────────────────────────────────────────────────────────────────────────────
 NUM_EPISODES     = 3000
 BATCH_SIZE       = 64
@@ -80,7 +76,7 @@ def select_action(q_net, state, eps, n_actions):
 
 
 def train_step(q_net, target_net, optimizer, replay_buffer, loss_fn):
-    """Double DQN update: online net selects action, target net evaluates it."""
+    """Double DQN update rule with Dueling networks."""
     states, actions, rewards, next_states, dones = replay_buffer.sample(BATCH_SIZE)
 
     states      = torch.FloatTensor(states).to(device)
@@ -92,10 +88,8 @@ def train_step(q_net, target_net, optimizer, replay_buffer, loss_fn):
     q_values = q_net(states).gather(1, actions.unsqueeze(1)).squeeze(1)
 
     with torch.no_grad():
-        # Double DQN: select best action with online net …
         best_actions = q_net(next_states).argmax(dim=1, keepdim=True)
-        # … evaluate it with target net
-        next_q = target_net(next_states).gather(1, best_actions).squeeze(1)
+        next_q       = target_net(next_states).gather(1, best_actions).squeeze(1)
         next_q[dones] = 0.0
         targets = rewards + GAMMA * next_q
 
@@ -126,7 +120,7 @@ def evaluate(q_net, env_data, n_eval=200):
 
 def main():
     os.makedirs(os.path.join(PRE_DIR, "output"), exist_ok=True)
-    save_path = os.path.join(PRE_DIR, "output", "double_dqn_best.pth")
+    save_path = os.path.join(PRE_DIR, "output", "dueling_dqn_best.pth")
 
     print("Loading data …")
     data = load_data()
@@ -135,8 +129,8 @@ def main():
     env           = LaneChangeEnv(data, seed=42)
     replay_buffer = ReplayBuffer(BUFFER_CAPACITY, seed=42)
 
-    q_net      = QNetwork(env.state_dim, env.n_actions, HIDDEN_DIM).to(device)
-    target_net = QNetwork(env.state_dim, env.n_actions, HIDDEN_DIM).to(device)
+    q_net      = DuelingQNetwork(env.state_dim, env.n_actions, HIDDEN_DIM).to(device)
+    target_net = DuelingQNetwork(env.state_dim, env.n_actions, HIDDEN_DIM).to(device)
     target_net.load_state_dict(q_net.state_dict())
     target_net.eval()
 
